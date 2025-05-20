@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -102,7 +102,7 @@ vim.g.have_nerd_font = false
 vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -151,6 +151,27 @@ vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.opt.inccommand = 'split'
 
 -- Show which line your cursor is on
+-- vim.opt.guicursor = ''
+
+-- Set block cursor with different shapes for different modes
+vim.opt.guicursor = 'n-v-c:block-Cursor,i-ci-ve:block-CursorInsert,r-cr-o:block-CursorReplace'
+
+-- Create an autocmd that runs AFTER colorscheme is loaded
+vim.api.nvim_create_autocmd('ColorScheme', {
+  callback = function()
+    vim.api.nvim_set_hl(0, 'Cursor', { bg = '#b4637a' }) -- Normal mode - rose
+    vim.api.nvim_set_hl(0, 'CursorInsert', { bg = '#d7827e' }) -- Insert mode - coral (brighter)
+    vim.api.nvim_set_hl(0, 'CursorReplace', { bg = '#ea9d34' }) -- Replace mode - gold
+  end,
+})
+
+-- Force the autocmd to run immediately as well
+vim.schedule(function()
+  vim.api.nvim_set_hl(0, 'Cursor', { bg = '#b4637a' })
+  vim.api.nvim_set_hl(0, 'CursorInsert', { bg = '#d7827e' })
+  vim.api.nvim_set_hl(0, 'CursorReplace', { bg = '#ea9d34' })
+end)
+
 vim.opt.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
@@ -196,6 +217,14 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
+-- Add these to your init.lua
+vim.keymap.set('n', '<leader>e', ':Explore<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<leader>te', ':tabnew<CR>:Explore<CR>', { noremap = true, silent = true })
+
+-- Switch to specific tabs with g1, g2, etc.
+for i = 1, 9 do
+  vim.keymap.set('n', 'g' .. i, i .. 'gt', { noremap = true, silent = true, desc = 'Go to tab ' .. i })
+end
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
@@ -339,6 +368,17 @@ require('lazy').setup({
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
     },
+  },
+
+  {
+    'windwp/nvim-autopairs',
+    event = 'InsertEnter',
+    config = true,
+  },
+  {
+    'windwp/nvim-ts-autotag',
+    dependencies = 'nvim-treesitter/nvim-treesitter',
+    config = true,
   },
 
   -- NOTE: Plugins can specify dependencies.
@@ -673,8 +713,14 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
         --
+
+        html = {},
+        cssls = {},
+        tailwindcss = {},
+        eslint = {},
+        svelte = {},
 
         lua_ls = {
           -- cmd = { ... },
@@ -713,6 +759,7 @@ require('lazy').setup({
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+        automatic_enable = {},
         automatic_installation = false,
         handlers = {
           function(server_name)
@@ -763,10 +810,12 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        python = { 'isort', 'black' },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        graphql = { 'prettierd', 'prettier', stop_after_first = true },
+        html = { 'prettierd', 'prettier', stop_after_first = true },
+        svelte = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -894,20 +943,23 @@ require('lazy').setup({
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
+    -- 'folke/tokyonight.nvim',
+    'rose-pine/neovim',
+    as = 'rose-pine',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     config = function()
       ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
-        },
+      require('rose-pine').setup {
+        variant = 'auto', -- Options: 'auto', 'main', 'moon', 'dawn'
+        dark_variant = 'moon', -- If variant is 'auto', choose 'main', 'moon', or 'dawn' for dark mode
+        disable_italics = false, -- Set to true to disable italics
+        -- Add more options as needed (see rose-pine docs)
       }
 
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'rose-pine'
     end,
   },
 
@@ -997,7 +1049,7 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
